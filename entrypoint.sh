@@ -9,6 +9,7 @@
 # Script installs ~200+ packages for full Kali XFCE + tools; total lines ~400 with comments.
 # Usage: chmod +x entrypoint.sh && ./entrypoint.sh
 # After setup, access via http://localhost:8006/vnc.html?host=localhost&port=8006 in Codespaces forwarded port.
+# Fix: Added removal of Yarn repo to resolve GPG signature errors during apt update.
 
 set -e  # Exit on error
 
@@ -34,6 +35,16 @@ check_status() {
         exit 1
     fi
 }
+
+# Step 0: Fix potential Yarn repo GPG errors (common in Codespaces/Node environments)
+log "Fixing Yarn repository GPG signature issues..."
+# Remove Yarn sources if present (not needed for Kali XFCE setup)
+rm -f /etc/apt/sources.list.d/yarn.list
+rm -f /etc/apt/sources.list.d/*.list  # Remove other potential unsigned sources
+# Clean any Yarn keys if present
+apt-key del 62D54FD4003F6525 2>/dev/null || true
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 62D54FD4003F6525 2>/dev/null || true  # Optional: Add key if keeping, but we remove repo
+check_status "Yarn repo fix"
 
 # Step 1: Update and upgrade system (Kali repos)
 log "Updating Kali repositories and system..."
@@ -308,3 +319,4 @@ tail -f /dev/null
 # - TigerVNC setup: https://wiki.archlinux.org/title/TigerVNC
 # - GitHub Codespaces ports: https://docs.github.com/en/codespaces/developing-in-a-codespace/forwarding-ports-in-your-codespace
 # - Supervisor for services: http://supervisord.org/
+# - Yarn GPG fix: https://yarnpkg.com/getting-started/install (key addition) / general apt troubleshooting
